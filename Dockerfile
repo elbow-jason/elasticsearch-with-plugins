@@ -1,37 +1,59 @@
-FROM           ubuntu:15.04
-MAINTAINER     Jason Goldberger
+FROM              elasticsearch:2.1.0
+MAINTAINER        Jason Goldberger <jgoldberger@leaf.ag>
 
+FROM java:8-jre
 
-RUN            apt-get update \
-               && apt-get -y install wget \
-               && apt-get -y install openjdk-7-jre
+# grab gosu for easy step-down from root
+# RUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4
+# RUN arch="$(dpkg --print-architecture)" \
+# 	&& set -x \
+# 	&& curl -o /usr/local/bin/gosu -fSL "https://github.com/tianon/gosu/releases/download/1.3/gosu-$arch" \
+# 	&& curl -o /usr/local/bin/gosu.asc -fSL "https://github.com/tianon/gosu/releases/download/1.3/gosu-$arch.asc" \
+# 	&& gpg --verify /usr/local/bin/gosu.asc \
+# 	&& rm /usr/local/bin/gosu.asc \
+# 	&& chmod +x /usr/local/bin/gosu
 
-ENV            ES_VERSION 2.0.0
+RUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4
 
-RUN            wget -qO /tmp/es.tgz https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/$ES_VERSION/elasticsearch-$ES_VERSION.tar.gz && \
-               cd /usr/share && \
-               tar xf /tmp/es.tgz && \
-               rm /tmp/es.tgz
+ENV ELASTICSEARCH_MAJOR 2.1
+ENV ELASTICSEARCH_VERSION 2.1.0
+ENV ELASTICSEARCH_REPO_BASE http://packages.elasticsearch.org/elasticsearch/2.x/debian
 
-ENV            ES_HOME /usr/share/elasticsearch-$ES_VERSION
+RUN echo "deb $ELASTICSEARCH_REPO_BASE stable main" > /etc/apt/sources.list.d/elasticsearch.list
 
-RUN            useradd -d $ES_HOME -M -r elasticsearch && \
-               chown -R elasticsearch: $ES_HOME
+RUN set -x \
+	&& apt-get update \
+	&& apt-get install -y --no-install-recommends elasticsearch=$ELASTICSEARCH_VERSION \
+	&& rm -rf /var/lib/apt/lists/*
 
-RUN            mkdir /data /conf && touch /data/.CREATED /conf/.CREATED && chown -R elasticsearch: /data /conf
+ENV PATH /usr/share/elasticsearch/bin:$PATH
 
-VOLUME         ["/data","/conf"]
+RUN set -ex \
+	&& for path in \
+		/usr/share/elasticsearch/data \
+		/usr/share/elasticsearch/logs \
+		/usr/share/elasticsearch/config \
+		/usr/share/elasticsearch/config/scripts \
+		/usr/share/elasticsearch/config/shield \
+	; do \
+		mkdir -p "$path"; \
+		chown -R elasticsearch:elasticsearch "$path"; \
+	done
 
-RUN            $ES_HOME/bin/plugin install license && $ES_HOME/bin/plugin install shield
+RUN touch /usr/share/elasticsearch/config/shield/users
+RUN touch /usr/share/elasticsearch/config/shield/user_roles
 
-CMD             ["python", "-m", "SimpleHTTPServer", "8888"]
-#RUN            ln -s /etc/elasticsearch/shield $ES_HOME/config/shield
-#USER           elasticsearch
+COPY config /usr/share/elasticsearch/config
 
-#EXPOSE         9200 9300
+VOLUME /usr/share/elasticsearch/data
 
-#ENV            OPTS="-Dnetwork.bind_host=_non_loopback_ -Des.path.conf=$ES_HOME"
+ENV ES_HOME /usr/share/elasticsearch
 
-#ADD            start /start
+RUN $ES_HOME/bin/plugin install license
+RUN $ES_HOME/bin/plugin install shield
 
-#CMD            ["/start"]
+RUN chown -R elasticsearch:elasticsearch /etc/elasticsearch/shield
+
+EXPOSE 9200 9300
+USER elasticsearch
+CMD ["elasticsearch"]
