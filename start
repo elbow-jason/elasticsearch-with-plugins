@@ -41,13 +41,7 @@ if [ -n "$PUBLISH_AS" ]; then
   OPTS="$OPTS -Des.transport.publish_port=$(echo $PUBLISH_AS | awk -F: '{if ($2) print $2; else print 9300}')"
 fi
 
-if [ -n "$PLUGINS" ]; then
-  for p in $(echo $PLUGINS | awk -v RS=, '{print}')
-  do
-    echo "Installing the plugin $p"
-    $ES_HOME/bin/plugin install $p
-  done
-fi
-
 echo "Starting Elasticsearch with the options $OPTS"
 $ES_HOME/bin/elasticsearch $OPTS
+# $ES_HOME/bin/shield/esusers useradd elbowjason -r admin -p elbowjason
+

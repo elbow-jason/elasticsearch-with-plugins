@@ -1,6 +1,7 @@
-FROM           ubuntu:14.04
+FROM           ubuntu:15.04
 MAINTAINER     Jason Goldberger
 ENV            ES_VERSION 2.0.0
+ENV            ES_USER_PASSWORD elbowjason
 
 RUN            apt-get update
 RUN            apt-get -y install wget
@@ -20,8 +21,11 @@ VOLUME         ["/data","/conf"]
 
 ADD            start /start
 
-
 WORKDIR        $ES_HOME
+
+RUN            bin/plugin install license
+RUN            bin/plugin install shield
+
 USER           elasticsearch
 
 EXPOSE         9200 9300
