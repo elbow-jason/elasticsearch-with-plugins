@@ -32,7 +32,7 @@ RUN             chown -R elasticsearch:elasticsearch $ES_HOME /etc/elasticsearch
 VOLUME          /usr/share/elasticsearch/data # readd this once container is working
 
 # Add elbowjason user
-RUN             $ES_HOME/bin/shield/esusers useradd elbowjason -r admin -p elbowjason
+# RUN             $ES_HOME/bin/shield/esusers useradd elbowjason -r admin -p elbowjason
 
 ## Image metadata.
 EXPOSE          9200 9300
