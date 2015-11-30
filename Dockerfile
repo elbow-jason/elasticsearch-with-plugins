@@ -1,30 +1,18 @@
-FROM              elasticsearch:2.1.0
-MAINTAINER        Jason Goldberger <jgoldberger@leaf.ag>
+FROM		java:8-jre
+MAINTAINER	Jason Goldberger <jgoldberger@leaf.ag>
 
-FROM java:8-jre
+RUN		apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4
 
-# grab gosu for easy step-down from root
-# RUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4
-# RUN arch="$(dpkg --print-architecture)" \
-# 	&& set -x \
-# 	&& curl -o /usr/local/bin/gosu -fSL "https://github.com/tianon/gosu/releases/download/1.3/gosu-$arch" \
-# 	&& curl -o /usr/local/bin/gosu.asc -fSL "https://github.com/tianon/gosu/releases/download/1.3/gosu-$arch.asc" \
-# 	&& gpg --verify /usr/local/bin/gosu.asc \
-# 	&& rm /usr/local/bin/gosu.asc \
-# 	&& chmod +x /usr/local/bin/gosu
+ENV		ELASTICSEARCH_MAJOR 2.1
+ENV 		ELASTICSEARCH_VERSION 2.1.0
+ENV		ELASTICSEARCH_REPO_BASE http://packages.elasticsearch.org/elasticsearch/2.x/debian
 
-RUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4
+RUN		 echo "deb $ELASTICSEARCH_REPO_BASE stable main" > /etc/apt/sources.list.d/elasticsearch.list
 
-ENV ELASTICSEARCH_MAJOR 2.1
-ENV ELASTICSEARCH_VERSION 2.1.0
-ENV ELASTICSEARCH_REPO_BASE http://packages.elasticsearch.org/elasticsearch/2.x/debian
-
-RUN echo "deb $ELASTICSEARCH_REPO_BASE stable main" > /etc/apt/sources.list.d/elasticsearch.list
-
-RUN set -x \
-	&& apt-get update \
-	&& apt-get install -y --no-install-recommends elasticsearch=$ELASTICSEARCH_VERSION \
-	&& rm -rf /var/lib/apt/lists/*
+RUN               set -x \
+	             && apt-get update \
+                     && apt-get install -y --no-install-recommends elasticsearch=$ELASTICSEARCH_VERSION \
+		     && rm -rf /var/lib/apt/lists/*
 
 ENV PATH /usr/share/elasticsearch/bin:$PATH
 
@@ -34,25 +22,27 @@ RUN set -ex \
 		/usr/share/elasticsearch/logs \
 		/usr/share/elasticsearch/config \
 		/usr/share/elasticsearch/config/scripts \
-		/usr/share/elasticsearch/config/shield \
 	; do \
 		mkdir -p "$path"; \
 		chown -R elasticsearch:elasticsearch "$path"; \
 	done
 
-RUN touch /usr/share/elasticsearch/config/shield/users
-RUN touch /usr/share/elasticsearch/config/shield/user_roles
-
 COPY config /usr/share/elasticsearch/config
-
-VOLUME /usr/share/elasticsearch/data
+# VOLUME /usr/share/elasticsearch/data # readd this once container is working
 
 ENV ES_HOME /usr/share/elasticsearch
 
 RUN $ES_HOME/bin/plugin install license
 RUN $ES_HOME/bin/plugin install shield
+RUN mkdir /usr/share/elasticsearch/config/shield
 
-RUN chown -R elasticsearch:elasticsearch /etc/elasticsearch/shield
+
+# RUN chown elasticsearch:elasticsearch /etc/elasticsearch/shield/users
+# RUN chmod 777 /etc/elasticsearch/shield/users
+
+
+# RUN ln -s /etc/elasticsearch/shield/users /usr/share/elasticsearch/config/shield/users
+# RUN $ES_HOME/bin/shield/esusers useradd elbowjason -r admin -p elbowjason
 
 EXPOSE 9200 9300
 USER elasticsearch
