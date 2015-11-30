@@ -5,5 +5,5 @@ shield:
       esusers1:
         type: esusers
         order: 0
-        files.users: /usr/share/elasticsearch/config/shield/users
-        files.users_roles: /usr/share/elasticsearch/config/shield/users_roles
+        files.users: /usr/share/elasticsearch/plugins/shield/config/users
+        files.users_roles: /usr/share/elasticsearch/plugins/shield/config/users_roles
