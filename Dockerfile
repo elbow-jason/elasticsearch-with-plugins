@@ -1,36 +1,49 @@
-FROM           ubuntu:15.04
-MAINTAINER     Jason Goldberger
+FROM		java:8-jre
+MAINTAINER	Jason Goldberger <jgoldberger@leaf.ag>
+
+RUN		apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4
+
+ENV		ELASTICSEARCH_MAJOR 2.1
+ENV 		ELASTICSEARCH_VERSION 2.1.0
+ENV		ELASTICSEARCH_REPO_BASE http://packages.elasticsearch.org/elasticsearch/2.x/debian
+
+RUN		 echo "deb $ELASTICSEARCH_REPO_BASE stable main" > /etc/apt/sources.list.d/elasticsearch.list
+
+RUN               set -x \
+	             && apt-get update \
+                     && apt-get install -y --no-install-recommends elasticsearch=$ELASTICSEARCH_VERSION \
+		     && rm -rf /var/lib/apt/lists/*
+
+ENV PATH /usr/share/elasticsearch/bin:$PATH
+
+RUN set -ex \
+	&& for path in \
+		/usr/share/elasticsearch/data \
+		/usr/share/elasticsearch/logs \
+		/usr/share/elasticsearch/config \
+		/usr/share/elasticsearch/config/scripts \
+	; do \
+		mkdir -p "$path"; \
+		chown -R elasticsearch:elasticsearch "$path"; \
+	done
+
+COPY config /usr/share/elasticsearch/config
+# VOLUME /usr/share/elasticsearch/data # readd this once container is working
+
+ENV ES_HOME /usr/share/elasticsearch
+
+RUN $ES_HOME/bin/plugin install license
+RUN $ES_HOME/bin/plugin install shield
+RUN mkdir /usr/share/elasticsearch/config/shield
 
 
-RUN            apt-get update \
-               && apt-get -y install wget \
+# RUN chown elasticsearch:elasticsearch /etc/elasticsearch/shield/users
+# RUN chmod 777 /etc/elasticsearch/shield/users
 
-RUN            && apt-get -y install openjdk-7-jre
 
-ENV            ES_VERSION 2.0.0
+# RUN ln -s /etc/elasticsearch/shield/users /usr/share/elasticsearch/config/shield/users
+# RUN $ES_HOME/bin/shield/esusers useradd elbowjason -r admin -p elbowjason
 
-RUN            wget -qO /tmp/es.tgz https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/$ES_VERSION/elasticsearch-$ES_VERSION.tar.gz && \
-               cd /usr/share && \
-               tar xf /tmp/es.tgz && \
-               rm /tmp/es.tgz
-
-ENV            ES_HOME /usr/share/elasticsearch
-
-RUN            useradd -d $ES_HOME -M -r elasticsearch && \
-               chown -R elasticsearch: $ES_HOME
-
-RUN            mkdir /data /conf && touch /data/.CREATED /conf/.CREATED && chown -R elasticsearch: /data /conf
-
-VOLUME         ["/data","/conf"]
-
-RUN            $ES_HOME/bin/plugin install license && $ES_HOME/bin/plugin install shield
-
-USER           elasticsearch
-
-EXPOSE         9200 9300
-
-ENV            OPTS=-Dnetwork.bind_host=_non_loopback_
-
-ADD            start /start
-
-CMD            ["/start"]
+EXPOSE 9200 9300
+USER elasticsearch
+CMD ["elasticsearch"]

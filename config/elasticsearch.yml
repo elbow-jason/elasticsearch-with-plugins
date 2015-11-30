@@ -1,0 +1,9 @@
+network.host: 0.0.0.0
+shield:
+  authc:
+    realms:
+      esusers1:
+        type: esusers
+        order: 0
+        files.users: /usr/share/elasticsearch/config/shield/users
+        files.users_roles: /usr/share/elasticsearch/config/shield/users_roles
