@@ -8,13 +8,13 @@ ENV             ELASTICSEARCH_MAJOR     2.1
 ENV             ELASTICSEARCH_VERSION   2.1.0
 ENV             ELASTICSEARCH_REPO_BASE http://packages.elasticsearch.org/elasticsearch/2.x/debian
 
-RUN		echo "deb $ELASTICSEARCH_REPO_BASE stable main" > /etc/apt/sources.list.d/elasticsearch.list
+RUN             echo "deb $ELASTICSEARCH_REPO_BASE stable main" > /etc/apt/sources.list.d/elasticsearch.list
 
 RUN             apt-get update && apt-get install -y --no-install-recommends elasticsearch=$ELASTICSEARCH_VERSION \
-		     && rm -rf /var/lib/apt/lists/*
+                && rm -rf /var/lib/apt/lists/* 
 
 ENV             ES_HOME /usr/share/elasticsearch
-ENV		PATH    $ES_HOME/bin:$PATH
+ENV             PATH    $ES_HOME/bin:$PATH
 ## !Install elasticsearch
 
 ## Setup ES config.
