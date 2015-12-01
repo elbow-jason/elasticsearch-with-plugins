@@ -11,7 +11,7 @@ ENV             ELASTICSEARCH_REPO_BASE http://packages.elasticsearch.org/elasti
 RUN             echo "deb $ELASTICSEARCH_REPO_BASE stable main" > /etc/apt/sources.list.d/elasticsearch.list
 
 RUN             apt-get update && apt-get install -y --no-install-recommends elasticsearch=$ELASTICSEARCH_VERSION \
-                && rm -rf /var/lib/apt/lists/* 
+                && rm -rf /var/lib/apt/lists/*
 
 ENV             ES_HOME /usr/share/elasticsearch
 ENV             PATH    $ES_HOME/bin:$PATH
@@ -19,8 +19,10 @@ ENV             PATH    $ES_HOME/bin:$PATH
 
 ## Setup ES config.
 # Add config dir to the Docker image both on /etc and $ES_HOME (elasticsearch and esuser)
-COPY            config/ /etc/elasticsearch/
-COPY            config/ $ES_HOME/config
+COPY            config/          /etc/elasticsearch/
+COPY            config/          $ES_HOME/config
+COPY            config/roles.yml $ES_HOME/config/shield/roles.yml
+
 # Install shield plugin (license is required).
 RUN             $ES_HOME/bin/plugin install license
 RUN             $ES_HOME/bin/plugin install shield
@@ -32,7 +34,7 @@ RUN             chown -R elasticsearch:elasticsearch $ES_HOME /etc/elasticsearch
 VOLUME          /usr/share/elasticsearch/data # readd this once container is working
 
 # Add elbowjason user
-# RUN             $ES_HOME/bin/shield/esusers useradd elbowjason -r admin -p elbowjason
+RUN             $ES_HOME/bin/shield/esusers useradd elbowjason -r admin -p elbowjason
 
 ## Image metadata.
 EXPOSE          9200 9300
